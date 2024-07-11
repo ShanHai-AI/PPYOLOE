@@ -82,7 +82,71 @@ plt.rcParams['axes.unicode_minus'] = False
 
 选择PaddleDetection(develop分支)的原因是，PP-YOLOE的垂类模型迭代更快些，选择空间更大。
 
+
 5. **git PaddleDetection 2.5版本**代码
    ```
    !git clone -b release/2.5 https://github.com/PaddlePaddle/PaddleDetection.git
    ```
+6. **进入PaddleDetection目录**
+   ```
+   %cd PaddleDetection
+   ```
+
+# 2 模型训练
+## 2.1 模型选型
+
+PaddleDetection团队提供了针对VisDrone-DET小目标数航拍场景的基于PP-YOLOE的检测模型，本项目使用这些模型作为预训练模型。
+
+本项目以`PP-YOLOE-Alpha-largesize-l`为例，展示训练和部署过程。
+## 2.2 模型训练
+7. **根据需求修改配置文件，比如检测的目标类别数**
+
+进入/home/aistudio/config_file/目录下，修改visdrone_detection.yml中**num_classes**参数
+
+```
+# 训练配置文件覆盖
+!cd configs
+!mkdir configs/visdrone/
+!cd ../
+!cp ../config_file/visdrone/ppyoloe_crn_l_80e_visdrone.yml configs/visdrone/ppyoloe_crn_l_80e_visdrone.yml
+!cp ../config_file/visdrone/ppyoloe_crn_l_alpha_largesize_80e_visdrone.yml configs/visdrone/ppyoloe_crn_l_alpha_largesize_80e_visdrone.yml
+!cp ../config_file/visdrone_detection.yml configs/datasets/visdrone_detection.yml
+!cp ../config_file/optimizer_300e.yml configs/ppyoloe/_base_/optimizer_300e.yml
+!cp ../config_file/ppyoloe_crn.yml configs/ppyoloe/_base_/ppyoloe_crn.yml
+!cp ../config_file/ppyoloe_reader.yml configs/ppyoloe/_base_/ppyoloe_reader.yml
+```
+8. **开始训练**
+
+mAP 不再增长时，即可停止训练。
+
+```
+# 开始训练
+!python tools/train.py -c configs/visdrone/ppyoloe_crn_l_alpha_largesize_80e_visdrone.yml --use_vdl=True --vdl_log_dir=./visdrone/ --eval
+```
+
+9. **训练完成后评估模型**
+ ```
+# 模型评估
+!python tools/eval.py -c configs/visdrone/ppyoloe_crn_l_alpha_largesize_80e_visdrone.yml -o weights=output/ppyoloe_crn_l_alpha_largesize_80e_visdrone/best_model.pdparams
+```
+## 2.3 预测推理
+```
+# 挑一张验证集的图片展示预测效果
+!python tools/infer.py -c configs/visdrone/ppyoloe_crn_l_alpha_largesize_80e_visdrone.yml -o weights=output/ppyoloe_crn_l_alpha_largesize_80e_visdrone/best_model --infer_img=/home/aistudio/MyDataset/JPEGImages/1679146167842.jpg --save_results=True
+```
+# 3 模型部署
+同样是小目标检测，相比于`SNIPER: Efficient Multi-Scale Training`暂不支持部署，PP-YOLOE是可以直接导出部署模型，并在多端高性能部署的：
+- Paddle Inference [Python](https://gitee.com/paddlepaddle/PaddleDetection/blob/develop/deploy/python) & [C++](https://gitee.com/paddlepaddle/PaddleDetection/blob/develop/deploy/cpp)
+- [Paddle-TensorRT](https://gitee.com/paddlepaddle/PaddleDetection/blob/develop/deploy/TENSOR_RT.md)
+- [PaddleServing](https://gitee.com/link?target=https%3A%2F%2Fgithub.com%2FPaddlePaddle%2FServing)
+- [PaddleSlim模型量化](https://gitee.com/paddlepaddle/PaddleDetection/blob/develop/configs/slim)
+
+接下来，我们将介绍PP-YOLOE如何使用Paddle Inference进行部署。
+## 3.1 导出模型
+10. **导出模型，即可使用FastDeploy进行快速推理**
+
+https://github.com/PaddlePaddle/FastDeploy
+
+```
+!python tools/export_model.py -c configs/visdrone/ppyoloe_crn_l_alpha_largesize_80e_visdrone.yml -o weights=output/ppyoloe_crn_l_alpha_largesize_80e_visdrone/best_model.pdparams
+```
