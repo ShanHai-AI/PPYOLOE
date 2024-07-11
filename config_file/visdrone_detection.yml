@@ -1,0 +1,23 @@
+metric: COCO
+num_classes: 2
+
+TrainDataset:
+  !COCODataSet
+    image_dir: /home/aistudio/MyDataset/JPEGImages
+    anno_path: /home/aistudio/MyDataset/train.json
+    dataset_dir: /home/aistudio/MyDataset
+    data_fields: ['image', 'gt_bbox', 'gt_class', 'is_crowd']
+
+EvalDataset:
+  !COCODataSet
+    image_dir: /home/aistudio/MyDataset/JPEGImages
+    anno_path: /home/aistudio/MyDataset/val.json
+    dataset_dir: /home/aistudio/MyDataset
+    # image_dir: test_dev
+    # anno_path: test_dev.json
+    # dataset_dir: dataset/visdrone
+
+TestDataset:
+  !ImageFolder
+    anno_path: /home/aistudio/MyDataset/val.json
+    dataset_dir: /home/aistudio/MyDataset
